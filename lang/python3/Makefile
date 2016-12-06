@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2015 OpenWrt.org
+# Copyright (C) 2006-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -14,12 +14,12 @@ PYTHON_VERSION:=$(PYTHON3_VERSION)
 PYTHON_VERSION_MICRO:=$(PYTHON3_VERSION_MICRO)
 
 PKG_NAME:=python3
-PKG_RELEASE:=3
+PKG_RELEASE:=1
 PKG_VERSION:=$(PYTHON_VERSION).$(PYTHON_VERSION_MICRO)
 
 PKG_SOURCE:=Python-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://www.python.org/ftp/python/$(PKG_VERSION)
-PKG_MD5SUM:=d149d2812f10cbe04c042232e7964171
+PKG_MD5SUM:=8906efbacfcdc7c3c9198aeefafd159e
 
 PKG_LICENSE:=PSF
 PKG_LICENSE_FILES:=LICENSE Modules/_ctypes/libffi_msvc/LICENSE Modules/_ctypes/darwin/LICENSE Modules/_ctypes/libffi/LICENSE Modules/_ctypes/libffi_osx/LICENSE Tools/pybench/LICENSE
@@ -32,6 +32,7 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/Python-$(PKG_VERSION)
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/Python-$(PKG_VERSION)
 
 PKG_BUILD_DEPENDS:=libbz2/host expat/host python3/host
+HOST_BUILD_DEPENDS:=bzip2/host expat/host libffi/host
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
@@ -103,7 +104,6 @@ endef
 MAKE_FLAGS+=\
 	CROSS_COMPILE=yes \
 	LD="$(TARGET_CC)" \
-	FREEZE_IMPORTLIB=_freeze_importlib \
 	PGEN=pgen3
 
 ifeq ($(ARCH),i386)
@@ -127,7 +127,7 @@ CONFIGURE_ARGS+= \
 	--with-threads \
 	--with-system-ffi="$(STAGING_DIR)/usr" \
 	--without-pymalloc \
-	--without-ensurepip \
+	--with-ensurepip=no \
 	$(ENABLE_IPV6) \
 	CONFIG_SITE="$(PKG_BUILD_DIR)/config.site" \
 	OPT="$(TARGET_CFLAGS)"
@@ -146,7 +146,7 @@ define Build/InstallDev
 		$(PKG_INSTALL_DIR)/usr/include/python$(PYTHON_VERSION) \
 		$(1)/usr/include/
 	$(CP) \
-		$(STAGING_DIR)/host/lib/python$(PYTHON_VERSION) \
+		$(HOST_PYTHON3_LIB_DIR) \
 		$(PKG_INSTALL_DIR)/usr/lib/libpython$(PYTHON_VERSION).so* \
 		$(1)/usr/lib/
 	$(CP) \
@@ -208,17 +208,15 @@ define Py3Package/python3/filespec
 -|$(PYTHON3_PKG_DIR)
 endef
 
-HOST_CFLAGS+= \
-	-I/usr/include/ncursesw \
-	-I/usr/include/ncurses
-
 HOST_CONFIGURE_ARGS+= \
 	--without-cxx-main \
 	--without-pymalloc \
 	--with-threads \
-	--prefix=$(STAGING_DIR)/host \
-	--with-system-expat=$(STAGING_DIR)/host \
-	--with-ensurepip=upgrade \
+	--prefix=$(HOST_PYTHON3_DIR) \
+	--exec-prefix=$(HOST_PYTHON3_DIR) \
+	--with-system-expat=$(STAGING_DIR_HOSTPKG) \
+	--with-system-ffi=$(STAGING_DIR_HOSTPKG) \
+	--with-ensurepip=no \
 	CONFIG_SITE= \
 	CFLAGS="$(HOST_CFLAGS)"
 
@@ -228,10 +226,11 @@ define Host/Compile
 endef
 
 define Host/Install
-	$(INSTALL_DIR) $(STAGING_DIR)/host/bin/
 	$(MAKE) -C $(HOST_BUILD_DIR) install
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/Parser/pgen $(STAGING_DIR)/host/bin/pgen3
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/Programs/_freeze_importlib $(STAGING_DIR)/host/bin/_freeze_importlib
+
+	$(INSTALL_DIR) $(HOST_PYTHON3_DIR)/bin/
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/Parser/pgen $(HOST_PYTHON3_DIR)/bin/pgen3
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/Programs/_freeze_importlib $(HOST_PYTHON3_DIR)/bin/_freeze_importlib
 endef
 
 $(eval $(call HostBuild))

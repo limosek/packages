@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2015 OpenWrt.org
+# Copyright (C) 2006-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,16 +7,22 @@
 
 include $(TOPDIR)/rules.mk
 
-# The file included below defines PYTHON_VERSION
+# For PYTHON_VERSION
+include ./files/python-version.mk
+
+# This file provides the necsessary host build variables
+include ./files/python-host.mk
+
+# For PyPackage
 include ./files/python-package.mk
 
 PKG_NAME:=python
 PKG_VERSION:=$(PYTHON_VERSION).$(PYTHON_VERSION_MICRO)
-PKG_RELEASE:=3
+PKG_RELEASE:=2
 
 PKG_SOURCE:=Python-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://www.python.org/ftp/python/$(PKG_VERSION)
-PKG_MD5SUM:=1dbcc848b4cd8399a8199d000f9f823c
+PKG_MD5SUM:=57dffcee9cee8bb2ab5f82af1d8e9a69
 
 PKG_LICENSE:=PSF
 PKG_LICENSE_FILES:=LICENSE Modules/_ctypes/libffi_msvc/LICENSE Modules/_ctypes/darwin/LICENSE Modules/_ctypes/libffi/LICENSE Modules/_ctypes/libffi_osx/LICENSE Tools/pybench/LICENSE
@@ -29,7 +35,7 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/Python-$(PKG_VERSION)
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/Python-$(PKG_VERSION)
 
 PKG_BUILD_DEPENDS:=python/host
-HOST_BUILD_DEPENDS:=bzip2/host expat/host
+HOST_BUILD_DEPENDS:=bzip2/host expat/host libffi/host
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
@@ -139,18 +145,19 @@ define Build/InstallDev
 	$(INSTALL_DATA) \
 		./files/python-package.mk \
 		./files/python-host.mk \
+		./files/python-version.mk \
 		$(STAGING_DIR)/mk/
 	$(CP) \
 		$(PKG_INSTALL_DIR)/usr/include/python$(PYTHON_VERSION) \
 		$(1)/usr/include/
 	$(CP) \
-		$(STAGING_DIR)/host/usr/lib/python$(PYTHON_VERSION) \
+		$(HOST_PYTHON_LIB_DIR) \
 		$(PKG_INSTALL_DIR)/usr/lib/libpython$(PYTHON_VERSION).so* \
 		$(1)/usr/lib/
 	$(CP) \
-		$(STAGING_DIR)/host/lib/pkgconfig/python.pc \
-		$(STAGING_DIR)/host/lib/pkgconfig/python2.pc \
-		$(STAGING_DIR)/host/lib/pkgconfig/python-$(PYTHON_VERSION).pc \
+		$(HOST_PYTHON_DIR)/lib/pkgconfig/python.pc \
+		$(HOST_PYTHON_DIR)/lib/pkgconfig/python2.pc \
+		$(HOST_PYTHON_DIR)/lib/pkgconfig/python-$(PYTHON_VERSION).pc \
 		$(1)/usr/lib/pkgconfig
 	$(CP) \
 		$(PKG_INSTALL_DIR)/usr/lib/python$(PYTHON_VERSION)/config \
@@ -213,24 +220,21 @@ define PyPackage/python/filespec
 -|$(PYTHON_PKG_DIR)
 endef
 
-HOST_CFLAGS+= \
-	-I/usr/include/ncursesw \
-	-I/usr/include/ncurses
-
 HOST_CONFIGURE_ARGS+= \
 	--without-cxx-main \
 	--without-pymalloc \
 	--with-threads \
-	--prefix=$(STAGING_DIR)/host/usr \
-	--with-system-expat=$(STAGING_DIR)/host \
-	--with-ensurepip=upgrade \
+	--prefix=$(HOST_PYTHON_DIR) \
+	--exec-prefix=$(HOST_PYTHON_DIR) \
+	--with-system-expat=$(STAGING_DIR_HOSTPKG) \
+	--with-system-ffi=$(STAGING_DIR_HOSTPKG) \
 	CONFIG_SITE= \
 	CFLAGS="$(HOST_CFLAGS)"
 
 define Host/Install
-	$(INSTALL_DIR) $(STAGING_DIR)/host/bin/
 	$(MAKE) -C $(HOST_BUILD_DIR) install
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/Parser/pgen $(STAGING_DIR)/host/bin/pgen2
+	$(INSTALL_DIR) $(HOST_PYTHON_DIR)/bin/
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/Parser/pgen $(HOST_PYTHON_DIR)/bin/pgen2
 endef
 
 $(eval $(call HostBuild))

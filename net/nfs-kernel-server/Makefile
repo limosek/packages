@@ -1,4 +1,4 @@
-# Copyright (C) 2009-2015 OpenWrt.org
+# Copyright (C) 2009-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,9 +7,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nfs-kernel-server
-PKG_VERSION:=1.3.3
+PKG_VERSION:=1.3.4
 PKG_RELEASE:=1
-PKG_MD5SUM:=9b87d890669eaaec8e97a2b0a35b2665
+PKG_MD5SUM:=2fabdadb8ff415a1eafcfb12ab1bf781
 
 PKG_SOURCE_URL:=@SF/nfs
 PKG_SOURCE:=nfs-utils-$(PKG_VERSION).tar.bz2
@@ -60,7 +60,7 @@ define Package/nfs-utils
   $(call Package/nfs-kernel-server/Default)
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS+= +libevent +USE_UCLIBC:librpc
+  DEPENDS+= +libevent2 +USE_UCLIBC:librpc
   TITLE:=updated mount utility (includes nfs4)
 endef
 

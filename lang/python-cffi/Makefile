@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2015 OpenWrt.org
+# Copyright (C) 2015-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=cffi
-PKG_VERSION:=1.4.2
+PKG_VERSION:=1.8.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://pypi.python.org/packages/source/c/cffi
-PKG_MD5SUM:=81357fe5042d00650b85b728cc181df2
+PKG_SOURCE_URL:=https://pypi.python.org/packages/0a/f3/686af8873b70028fccf67b15c78fd4e4667a3da995007afc71e786d61b0a
+PKG_MD5SUM:=c8e877fe0426a99d0cf5872cf2f95b27
 
 PKG_BUILD_DEPENDS:=python python-setuptools
 HOST_BUILD_DEPENDS:=libffi/host python/host python-setuptools/host python-pycparser/host
@@ -45,7 +45,7 @@ define Build/Compile
 endef
 
 define Host/Compile
-	$(call Build/Compile/HostPyMod,,install --prefix="/usr" --root="$(STAGING_DIR)/host")
+	$(call Build/Compile/HostPyMod,,install --prefix="" --root="$(HOST_BUILD_PREFIX)")
 endef
 
 define Host/Install
